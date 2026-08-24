@@ -60,7 +60,7 @@ MongrelCalculator/
   - Operators `+`, `−`, `×`, `÷`, `=`: cold blue `Color(hue: 0.545, saturation: 0.68, brightness: 0.58)`.
   - Numbers: `Color(white: 0.16)`.
   - Functions (C, CE, ⌫, ±, %): `Color(white: 0.25)`.
-  - Scientific / memory (MC, MR, M+, M−, ∺, x², 1/x): `Color(white: 0.21)`.
+  - Scientific / memory (MC, MR, M+, M−, &radic;&radic;, x², 1/x): `Color(white: 0.21)`.
 - `GlassCalcButtonStyle: ButtonStyle` — press drives 0.90× scale (90ms ease-out). `isActive: Bool` param adds a white tint overlay when the button is the pending operator.
 - `.focusEffectDisabled(true)` on every button — suppresses macOS default blue focus ring.
 - `GlassBackground: NSViewRepresentable` — `NSVisualEffectView(.fullScreenUI, .behindWindow)` + dark overlay for the ominous glass effect.

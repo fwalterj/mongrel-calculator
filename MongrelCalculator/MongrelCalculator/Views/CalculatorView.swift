@@ -76,7 +76,7 @@ struct CalculatorView: View {
                     .padding(.bottom, 6)
             }
             Spacer(minLength: 0)
-            Text(engine.display)
+            Text(engine.readout)
                 .font(.system(size: 46, weight: .light, design: .rounded))
                 .foregroundStyle(.white)
                 .lineLimit(1)

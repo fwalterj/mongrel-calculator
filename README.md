@@ -48,6 +48,7 @@ MongrelCalculator/
 ### `CalculatorEngine.swift`
 `@MainActor ObservableObject` with published display, history, memory, and active-operation state.
 - **Digit/decimal entry**: 15-char cap, decimal dedup, reset-on-new-number after result.
+- **Live expression readout**: entering `45`, `+`, `86` displays `45 + 86` before evaluation, then returns to the result after `=`.
 - **Arithmetic**: `+`, `−`, `×`, `÷`, chained operations, operator replacement, and repeated equals.
 - **Scientific**: `√` (negative guard → "Error"), `x²`, `1/x` (zero guard → "Error").
 - **Memory**: MC, MR, M+, M−. `M` indicator appears in display area when memory is non-zero.
@@ -93,7 +94,7 @@ xcodebuild -project MongrelCalculator.xcodeproj \
 
 ## Build status
 
-**BUILD AND 14 TESTS SUCCEEDED** — macOS, `CODE_SIGNING_ALLOWED=NO`, verified August 2026.
+**BUILD AND 16 TESTS SUCCEEDED** — macOS, `CODE_SIGNING_ALLOWED=NO`, verified August 2026.
 
 The XcodeGen project keeps Hardened Runtime enabled for eventual Developer ID distribution, while unsigned local builds can opt out of signing at the command line. No App Store sandbox assumptions are built into the app.
 

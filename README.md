@@ -4,9 +4,17 @@ A native macOS calculator — part of the Mongrel app suite.
 
 ## Overview
 
-Mongrel Calculator is a native macOS calculator with a premium cold-blue ominous-glass UI. Standard arithmetic, scientific functions, memory registers, keyboard input, and a history tape. Proper MVVM separation — all logic lives in `CalculatorEngine`, views own nothing stateful.
+Mongrel Calculator is a native macOS calculator with a premium cold-blue ominous-glass UI. Standard arithmetic, scientific functions, memory registers, keyboard input, a history tape, and independent native window tabs. Calculation logic lives in `CalculatorEngine`; each window or tab owns a separate engine session.
 
 > **Work in progress:** this is a direct-distribution macOS project under active development. The repository is intended for source review, collaboration, and development builds rather than production use.
+
+## Current interface
+
+| Calculator | Independent native tabs |
+|---|---|
+| ![Mongrel Calculator main interface](docs/screenshots/calculator-main.png) | ![Mongrel Calculator with two tabs](docs/screenshots/independent-tabs.png) |
+
+The `+` control in the native tab bar opens another calculator in the same window. Every tab keeps its own display, pending operation, history, and memory register; keyboard input is routed only to the selected tab.
 
 ## Stack
 
@@ -26,7 +34,7 @@ MongrelCalculator/
 │   └── CalculatorEngineTests.swift      # Arithmetic regression suite
 └── MongrelCalculator/
     ├── App/
-    │   ├── MongrelCalculatorApp.swift   # @main, WindowGroup, fixed size
+    │   ├── MongrelCalculatorApp.swift   # @main and per-window session root
     │   └── Info.plist
     ├── Engine/
     │   └── CalculatorEngine.swift       # ObservableObject, all logic
@@ -40,6 +48,7 @@ MongrelCalculator/
 ### `CalculatorEngine.swift`
 `@MainActor ObservableObject` with published display, history, memory, and active-operation state.
 - **Digit/decimal entry**: 15-char cap, decimal dedup, reset-on-new-number after result.
+- **Live expression readout**: entering `45`, `+`, `86` displays `45 + 86` before evaluation, then returns to the result after `=`.
 - **Arithmetic**: `+`, `−`, `×`, `÷`, chained operations, operator replacement, and repeated equals.
 - **Scientific**: `√` (negative guard → "Error"), `x²`, `1/x` (zero guard → "Error").
 - **Memory**: MC, MR, M+, M−. `M` indicator appears in display area when memory is non-zero.
@@ -52,8 +61,8 @@ MongrelCalculator/
 - Layout: history tape (4 lines) → 0.5px separator → display → scientific row → 5×4 button grid.
 - Button sizes tuned so scientific row inner width exactly equals main grid inner width (both 334pt).
 - **Active operator highlight**: `engine.activeOperation == key` passed as `isActive` to each button — the pending operator shows a white tint overlay while waiting for second operand.
-- **Keyboard monitor**: `NSEvent.addLocalMonitorForEvents`, installed `onAppear`, removed `onDisappear`. Normalises ASCII `-` → `−`, `*` → `×`, `/` → `÷`, Return/numpad-Enter → `=`, Escape → CE, and consumes handled keys to prevent duplicate responder-chain behavior.
-- `[weak engine]` capture to avoid retain cycle through monitor.
+- **Window-aware keyboard monitor**: a zero-size `NSViewRepresentable` resolves its owning `NSWindow` and accepts `NSEvent` input only while that tab is the key window. It normalises ASCII `-` → `−`, `*` → `×`, `/` → `÷`, Return/numpad-Enter → `=`, Escape → CE, and consumes handled keys to prevent duplicate responder-chain behavior.
+- The monitor is disconnected when its representable is dismantled, and weak window/coordinator captures avoid retaining closed tabs.
 
 ### `CalcButton.swift`
 - `CalcKeyKind` enum (`.digit`, `.op`, `.clear`, `.scientific`) drives background color.
@@ -66,7 +75,8 @@ MongrelCalculator/
 - `GlassBackground: NSViewRepresentable` — `NSVisualEffectView(.fullScreenUI, .behindWindow)` + dark overlay for the ominous glass effect.
 
 ### `MongrelCalculatorApp.swift`
-- `@StateObject private var engine` — single source of truth, injected via `.environmentObject`.
+- `CalculatorWindow` owns a fresh `@StateObject` engine for every `WindowGroup` instance, including native macOS tabs.
+- The engine is injected through `.environmentObject` only within that tab, preventing display, history, memory, and keyboard state from leaking between sessions.
 - `.windowStyle(.hiddenTitleBar)` — traffic lights visible, title text hidden.
 - `.windowResizability(.contentSize)` — window locked to exact content size, not user-resizable.
 - `.defaultSize(width: 372, height: 572)`.
@@ -84,7 +94,7 @@ xcodebuild -project MongrelCalculator.xcodeproj \
 
 ## Build status
 
-**BUILD AND 13 TESTS SUCCEEDED** — macOS, `CODE_SIGNING_ALLOWED=NO`, verified August 2026.
+**BUILD AND 16 TESTS SUCCEEDED** — macOS, `CODE_SIGNING_ALLOWED=NO`, verified August 2026.
 
 The XcodeGen project keeps Hardened Runtime enabled for eventual Developer ID distribution, while unsigned local builds can opt out of signing at the command line. No App Store sandbox assumptions are built into the app.
 

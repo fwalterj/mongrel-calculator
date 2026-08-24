@@ -11,6 +11,11 @@ targets:
     sources: [{path: MongrelCalculator, type: group}]
     info:
       path: MongrelCalculator/App/Info.plist
+      properties:
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        NSHumanReadableCopyright: "© 2026 Mongrel"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.mongrel.calculator

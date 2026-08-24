@@ -19,6 +19,15 @@ final class CalculatorEngine: ObservableObject {
 
     var hasMemory: Bool { memoryValue != 0 }
 
+    /// The complete in-progress expression shown in the primary readout.
+    /// `display` remains the parseable current operand used by the engine.
+    var readout: String {
+        guard let firstOperand, let pendingOperation else { return display }
+
+        let expression = "\(format(firstOperand)) \(pendingOperation)"
+        return hasEnteredSecondOperand ? "\(expression) \(display)" : expression
+    }
+
     // Reusable formatter — never has grouping separators so Double(_:) can parse display back.
     private let formatter: NumberFormatter = {
         let f = NumberFormatter()

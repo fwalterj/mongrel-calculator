@@ -3,7 +3,6 @@ import AppKit
 
 struct CalculatorView: View {
     @EnvironmentObject private var engine: CalculatorEngine
-    @State private var keyMonitor: Any?
 
     // Button rows: operators use unicode chars that match engine's switch cases
     private let mainRows: [[String]] = [
@@ -41,8 +40,12 @@ struct CalculatorView: View {
                 buttonArea
             }
         }
-        .onAppear(perform: installKeyMonitor)
-        .onDisappear(perform: removeKeyMonitor)
+        .background {
+            CalculatorKeyboardCapture { key in
+                engine.input(key)
+            }
+            .frame(width: 0, height: 0)
+        }
     }
 
     // MARK: - History tape
@@ -73,7 +76,7 @@ struct CalculatorView: View {
                     .padding(.bottom, 6)
             }
             Spacer(minLength: 0)
-            Text(engine.display)
+            Text(engine.readout)
                 .font(.system(size: 46, weight: .light, design: .rounded))
                 .foregroundStyle(.white)
                 .lineLimit(1)
@@ -115,45 +118,99 @@ struct CalculatorView: View {
         }
         .padding(hPad)
     }
+}
 
-    // MARK: - Keyboard
+// MARK: - Keyboard
 
-    private func installKeyMonitor() {
-        guard keyMonitor == nil else { return }
-        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak engine] event in
-            guard let engine, let key = Self.mapKey(event) else { return event }
-            engine.input(key)
-            return nil
+/// A local event monitor is still needed for calculator-style single-key input,
+/// but it must be scoped to one NSWindow. Native macOS tabs are separate windows;
+/// an app-wide monitor would otherwise update every open calculator at once.
+private struct CalculatorKeyboardCapture: NSViewRepresentable {
+    var onKey: (String) -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onKey: onKey)
+    }
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView(frame: .zero)
+        DispatchQueue.main.async {
+            context.coordinator.connect(to: view.window)
+        }
+        return view
+    }
+
+    func updateNSView(_ view: NSView, context: Context) {
+        context.coordinator.onKey = onKey
+        DispatchQueue.main.async {
+            context.coordinator.connect(to: view.window)
         }
     }
 
-    private func removeKeyMonitor() {
-        guard let monitor = keyMonitor else { return }
-        NSEvent.removeMonitor(monitor)
-        keyMonitor = nil
+    static func dismantleNSView(_ view: NSView, coordinator: Coordinator) {
+        coordinator.stop()
     }
 
-    /// Map a raw NSEvent to the engine's key names (unicode operators + special keys).
-    private static func mapKey(_ event: NSEvent) -> String? {
-        switch event.keyCode {
-        case 51: return "⌫"        // Delete / Backspace
-        case 53: return "CE"       // Escape
-        case 36, 76: return "="    // Return, numpad Enter
-        default: break
+    @MainActor
+    final class Coordinator {
+        var onKey: (String) -> Void
+
+        private weak var window: NSWindow?
+        private var monitor: Any?
+
+        init(onKey: @escaping (String) -> Void) {
+            self.onKey = onKey
         }
-        guard let c = event.characters, c.count == 1 else { return nil }
-        switch c {
-        case "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".":
-            return c
-        case "+": return "+"
-        case "-": return "−"       // normalize ASCII minus → unicode minus sign
-        case "*": return "×"
-        case "/": return "÷"
-        case "=": return "="
-        case "%": return "%"
-        case "c": return "CE"
-        case "C": return "C"
-        default: return nil
+
+        func connect(to window: NSWindow?) {
+            guard let window else { return }
+            guard self.window !== window || monitor == nil else { return }
+
+            stop()
+            self.window = window
+            monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self, weak window] event in
+                guard let self,
+                      let window,
+                      window.isKeyWindow,
+                      event.window === window,
+                      let key = Self.mapKey(event) else {
+                    return event
+                }
+                self.onKey(key)
+                return nil
+            }
+        }
+
+        func stop() {
+            if let monitor {
+                NSEvent.removeMonitor(monitor)
+            }
+            monitor = nil
+            window = nil
+        }
+
+        /// Map a raw NSEvent to the engine's key names (unicode operators + special keys).
+        private static func mapKey(_ event: NSEvent) -> String? {
+            switch event.keyCode {
+            case 51: return "⌫"        // Delete / Backspace
+            case 53: return "CE"       // Escape
+            case 36, 76: return "="    // Return, numpad Enter
+            default: break
+            }
+            guard let c = event.characters, c.count == 1 else { return nil }
+            switch c {
+            case "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".":
+                return c
+            case "+": return "+"
+            case "-": return "−"       // normalize ASCII minus → unicode minus sign
+            case "*": return "×"
+            case "/": return "÷"
+            case "=": return "="
+            case "%": return "%"
+            case "c": return "CE"
+            case "C": return "C"
+            default: return nil
+            }
         }
     }
 }

@@ -95,6 +95,17 @@ final class CalculatorEngineTests: XCTestCase {
         XCTAssertEqual(engine.history.count, 30)
     }
 
+    func test_separateCalculatorSessionsDoNotShareState() {
+        let otherEngine = CalculatorEngine()
+
+        enter("45", "+", "86", "=")
+
+        XCTAssertEqual(engine.display, "131")
+        XCTAssertEqual(engine.history, ["45 + 86 = 131"])
+        XCTAssertEqual(otherEngine.display, "0")
+        XCTAssertTrue(otherEngine.history.isEmpty)
+    }
+
     private func enter(_ keys: String...) {
         for keyGroup in keys {
             if keyGroup.allSatisfy(\.isNumber) {

@@ -58,6 +58,25 @@ final class CalculatorEngineTests: XCTestCase {
         XCTAssertEqual(engine.display, "10")
     }
 
+    func test_readoutShowsPendingExpressionAsItIsEntered() {
+        enter("45", "+")
+        XCTAssertEqual(engine.readout, "45 +")
+
+        enter("86")
+        XCTAssertEqual(engine.readout, "45 + 86")
+
+        enter("=")
+        XCTAssertEqual(engine.readout, "131")
+    }
+
+    func test_readoutTracksOperatorReplacementAndChaining() {
+        enter("5", "+", "×")
+        XCTAssertEqual(engine.readout, "5 ×")
+
+        enter("2", "+")
+        XCTAssertEqual(engine.readout, "10 +")
+    }
+
     func test_repeatedEqualsReplaysLastOperation() {
         enter("5", "+", "2", "=", "=", "=")
         XCTAssertEqual(engine.display, "11")
@@ -93,6 +112,17 @@ final class CalculatorEngineTests: XCTestCase {
             enter("1", "+", "1", "=", "C")
         }
         XCTAssertEqual(engine.history.count, 30)
+    }
+
+    func test_separateCalculatorSessionsDoNotShareState() {
+        let otherEngine = CalculatorEngine()
+
+        enter("45", "+", "86", "=")
+
+        XCTAssertEqual(engine.display, "131")
+        XCTAssertEqual(engine.history, ["45 + 86 = 131"])
+        XCTAssertEqual(otherEngine.display, "0")
+        XCTAssertTrue(otherEngine.history.isEmpty)
     }
 
     private func enter(_ keys: String...) {

@@ -7,6 +7,8 @@
 *.xcodeproj/xcuserdata/
 build/
 DerivedData/
+.build/
+dist/
 *.ipa
 *.dSYM.zip
 *.dSYM
@@ -29,3 +31,6 @@ MongrelCalculator/MongrelCalculator.xcodeproj/
 # Local research and design references
 MacOS-Calculator-main/
 userChrome-glass.css
+
+# Accidental local Xcode scaffold; the maintained project lives in MongrelCalculator/
+Mongrel Calculator/

@@ -7,7 +7,7 @@ PROJECT_DIR="$ROOT_DIR/MongrelCalculator"
 BUILD_DIR="$ROOT_DIR/.build/beta"
 DIST_DIR="$ROOT_DIR/dist"
 APP_NAME="MongrelCalculator.app"
-ARCHIVE_NAME="MongrelCalculator-0.9.0-beta.1-macOS-universal.zip"
+ARCHIVE_NAME="MongrelCalculator-0.9.1-beta.1-macOS-universal.zip"
 SIGNING_IDENTITY="${DEVELOPER_ID_APPLICATION:-}"
 NOTARY_PROFILE="${NOTARYTOOL_PROFILE:-}"
 

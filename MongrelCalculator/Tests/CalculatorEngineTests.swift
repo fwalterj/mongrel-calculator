@@ -275,3 +275,99 @@ final class CalculatorKeyboardMapperTests: XCTestCase {
         )
     }
 }
+
+@MainActor
+final class MongrelAppearanceModelTests: XCTestCase {
+    private var defaults: UserDefaults!
+    private var suiteName: String!
+
+    override func setUp() {
+        super.setUp()
+        suiteName = "MongrelAppearanceModelTests.\(UUID().uuidString)"
+        defaults = UserDefaults(suiteName: suiteName)
+        defaults.removePersistentDomain(forName: suiteName)
+    }
+
+    override func tearDown() {
+        defaults.removePersistentDomain(forName: suiteName)
+        defaults = nil
+        suiteName = nil
+        super.tearDown()
+    }
+
+    func testContrastModeIsExactBlackAndWhiteAtMaximumRatio() {
+        let appearance = MongrelAppearanceModel(defaults: defaults)
+
+        XCTAssertEqual(appearance.mode, .contrast)
+        XCTAssertEqual(appearance.backgroundHex, "#000000")
+        XCTAssertEqual(appearance.textHex, "#FFFFFF")
+        XCTAssertEqual(appearance.contrastRatio, 21, accuracy: 0.0001)
+        XCTAssertEqual(appearance.foregroundOpacity(0.28), 0.72)
+    }
+
+    func testCustomColorsPersistAcrossModelInstances() {
+        let appearance = MongrelAppearanceModel(defaults: defaults)
+        appearance.mode = .custom
+        appearance.backgroundHue = 0.12
+        appearance.backgroundSaturation = 0.34
+        appearance.backgroundBrightness = 0.56
+        appearance.textHue = 0.78
+        appearance.textSaturation = 0.21
+        appearance.textBrightness = 0.92
+
+        let restored = MongrelAppearanceModel(defaults: defaults)
+        XCTAssertEqual(restored.mode, .custom)
+        XCTAssertEqual(restored.backgroundHue, 0.12, accuracy: 0.0001)
+        XCTAssertEqual(restored.backgroundSaturation, 0.34, accuracy: 0.0001)
+        XCTAssertEqual(restored.backgroundBrightness, 0.56, accuracy: 0.0001)
+        XCTAssertEqual(restored.textHue, 0.78, accuracy: 0.0001)
+        XCTAssertEqual(restored.textSaturation, 0.21, accuracy: 0.0001)
+        XCTAssertEqual(restored.textBrightness, 0.92, accuracy: 0.0001)
+    }
+
+    func testClassicModePreservesOriginalSecondaryCueOpacity() {
+        let appearance = MongrelAppearanceModel(defaults: defaults)
+        appearance.mode = .classic
+
+        XCTAssertEqual(appearance.foregroundOpacity(0.28), 0.28)
+    }
+
+    func testImproveReadabilityRepairsAnIllegibleCustomPair() {
+        let appearance = MongrelAppearanceModel(defaults: defaults)
+        appearance.mode = .custom
+        appearance.backgroundHue = 0
+        appearance.backgroundSaturation = 0
+        appearance.backgroundBrightness = 0.5
+        appearance.textHue = 0
+        appearance.textSaturation = 0
+        appearance.textBrightness = 0.5
+
+        XCTAssertEqual(appearance.contrastRatio, 1, accuracy: 0.0001)
+        appearance.improveCustomReadability()
+        XCTAssertGreaterThanOrEqual(appearance.contrastRatio, 7)
+    }
+
+    func testInvalidStoredSliderValuesAreClamped() {
+        defaults.set(2.5, forKey: MongrelAppearanceModel.backgroundBrightnessKey)
+        defaults.set(-1.0, forKey: MongrelAppearanceModel.textBrightnessKey)
+
+        let appearance = MongrelAppearanceModel(defaults: defaults)
+        XCTAssertEqual(appearance.backgroundBrightness, 1)
+        XCTAssertEqual(appearance.textBrightness, 0)
+    }
+
+    func testResetCustomColorsRestoresAccessibleDefaults() {
+        let appearance = MongrelAppearanceModel(defaults: defaults)
+        appearance.mode = .custom
+        appearance.backgroundBrightness = 1
+        appearance.textBrightness = 0
+
+        appearance.resetCustomColors()
+
+        XCTAssertEqual(appearance.backgroundHue, MongrelAppearanceModel.defaultBackgroundHue)
+        XCTAssertEqual(appearance.backgroundBrightness, MongrelAppearanceModel.defaultBackgroundBrightness)
+        XCTAssertEqual(appearance.textHue, MongrelAppearanceModel.defaultTextHue)
+        XCTAssertEqual(appearance.textBrightness, MongrelAppearanceModel.defaultTextBrightness)
+        XCTAssertGreaterThanOrEqual(appearance.contrastRatio, 7)
+    }
+}

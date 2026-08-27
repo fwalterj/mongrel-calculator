@@ -22,13 +22,14 @@ enum CalcKeyKind {
         }
     }
 
-    var background: Color {
-        if MongrelLocalAppearance.mode != .standard {
+    @MainActor
+    func background(using appearance: MongrelAppearanceModel) -> Color {
+        if appearance.mode != .classic {
             switch self {
-            case .op: return MongrelLocalAppearance.text.opacity(0.22)
-            case .clear: return MongrelLocalAppearance.surface(lift: 0.11)
-            case .scientific: return MongrelLocalAppearance.surface(lift: 0.08)
-            case .digit: return MongrelLocalAppearance.surface(lift: 0.055)
+            case .op: return appearance.text.opacity(0.22)
+            case .clear: return appearance.surface(lift: 0.11)
+            case .scientific: return appearance.surface(lift: 0.08)
+            case .digit: return appearance.surface(lift: 0.055)
             }
         }
         switch self {
@@ -44,6 +45,7 @@ enum CalcKeyKind {
 
 struct GlassCalcButtonStyle: ButtonStyle {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ObservedObject var appearance: MongrelAppearanceModel
 
     let kind: CalcKeyKind
     let height: CGFloat
@@ -52,16 +54,16 @@ struct GlassCalcButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         let radius = height * 0.36
         configuration.label
-            .background(kind.background)
+            .background(kind.background(using: appearance))
             .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .stroke(MongrelLocalAppearance.text.opacity(MongrelLocalAppearance.mode == .contrast ? 0.72 : (kind == .op ? 0.12 : 0.07)), lineWidth: 0.5)
+                    .stroke(appearance.text.opacity(appearance.mode == .contrast ? 0.72 : (kind == .op ? 0.12 : 0.07)), lineWidth: 0.5)
             )
             // Active-operator highlight: white tint so the pending op stays lit
             .overlay(
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .fill(MongrelLocalAppearance.text.opacity(isActive ? 0.18 : 0.00))
+                    .fill(appearance.text.opacity(isActive ? 0.18 : 0.00))
             )
             .shadow(color: Color.black.opacity(0.30), radius: 3, y: 2)
             .scaleEffect(configuration.isPressed && !reduceMotion ? 0.90 : 1.0)
@@ -72,6 +74,8 @@ struct GlassCalcButtonStyle: ButtonStyle {
 // MARK: - CalcButton
 
 struct CalcButton: View {
+    @EnvironmentObject private var appearance: MongrelAppearanceModel
+
     let key: String
     let width: CGFloat
     let height: CGFloat
@@ -123,10 +127,10 @@ struct CalcButton: View {
                 .font(kind == .scientific
                       ? .system(size: 13, weight: .medium, design: .rounded)
                       : .system(size: 22, weight: .medium, design: .rounded))
-                .foregroundStyle(MongrelLocalAppearance.text)
+                .foregroundStyle(appearance.text)
                 .frame(width: width, height: height)
         }
-        .buttonStyle(GlassCalcButtonStyle(kind: kind, height: height, isActive: isActive))
+        .buttonStyle(GlassCalcButtonStyle(appearance: appearance, kind: kind, height: height, isActive: isActive))
         .focusEffectDisabled(true)
         .accessibilityLabel(accessibleName)
         .accessibilityHint(helpText)

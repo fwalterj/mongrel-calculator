@@ -3,6 +3,7 @@ import AppKit
 
 struct CalculatorView: View {
     @EnvironmentObject private var engine: CalculatorEngine
+    @EnvironmentObject private var appearance: MongrelAppearanceModel
     @State private var showingHistory = false
 
     // Button rows: operators use unicode chars that match engine's switch cases
@@ -28,16 +29,16 @@ struct CalculatorView: View {
     var body: some View {
         ZStack {
             GlassBackground().ignoresSafeArea()
-            (MongrelLocalAppearance.mode == .standard
+            (appearance.mode == .classic
                 ? Color(hue: 0.55, saturation: 0.20, brightness: 0.08)
-                : MongrelLocalAppearance.background)
-                .opacity(MongrelLocalAppearance.mode == .standard ? 0.91 : 1)
+                : appearance.background)
+                .opacity(appearance.mode == .classic ? 0.91 : 1)
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
                 historyTape
                 Rectangle()
-                    .fill(MongrelLocalAppearance.text.opacity(MongrelLocalAppearance.mode == .contrast ? 0.62 : 0.08))
+                    .fill(appearance.text.opacity(appearance.mode == .contrast ? 0.62 : 0.08))
                     .frame(height: 0.5)
                 displayArea
                 buttonArea
@@ -60,9 +61,9 @@ struct CalculatorView: View {
             } label: {
                 Image(systemName: engine.history.isEmpty ? "clock" : "clock.fill")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(MongrelLocalAppearance.text.opacity(engine.history.isEmpty ? 0.32 : 0.72))
+                    .foregroundStyle(appearance.foreground(opacity: engine.history.isEmpty ? 0.32 : 0.72))
                     .frame(width: 28, height: 28)
-                    .background(MongrelLocalAppearance.text.opacity(0.06))
+                    .background(appearance.text.opacity(0.06))
                     .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
             }
             .buttonStyle(.plain)
@@ -78,13 +79,13 @@ struct CalculatorView: View {
                 if engine.history.isEmpty {
                     Text("History appears here")
                         .font(.system(size: 11, weight: .medium, design: .rounded))
-                        .foregroundStyle(MongrelLocalAppearance.text.opacity(0.28))
+                        .foregroundStyle(appearance.foreground(opacity: 0.28))
                         .frame(maxWidth: .infinity, alignment: .trailing)
                 } else {
                     ForEach(Array(engine.history.suffix(4).enumerated()), id: \.offset) { _, entry in
                         Text(entry)
                             .font(.system(size: 11, weight: .medium, design: .monospaced))
-                            .foregroundStyle(MongrelLocalAppearance.text.opacity(0.48))
+                            .foregroundStyle(appearance.foreground(opacity: 0.48))
                             .lineLimit(1)
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
@@ -125,8 +126,8 @@ struct CalculatorView: View {
             }
         }
         .frame(width: 310, height: 260)
-        .background(MongrelLocalAppearance.background)
-        .foregroundStyle(MongrelLocalAppearance.text)
+        .background(appearance.background)
+        .foregroundStyle(appearance.text)
     }
 
     // MARK: - Display
@@ -136,7 +137,7 @@ struct CalculatorView: View {
             if let issue = engine.issue {
                 Text(issue.message)
                     .font(.system(size: 11, weight: .semibold, design: .rounded))
-                    .foregroundStyle(MongrelLocalAppearance.text.opacity(0.72))
+                    .foregroundStyle(appearance.foreground(opacity: 0.72))
                     .lineLimit(1)
                     .accessibilityLabel("Calculator error")
                     .accessibilityValue(issue.message)
@@ -146,16 +147,16 @@ struct CalculatorView: View {
                 if engine.hasMemory {
                     Text("M")
                         .font(.system(size: 13, weight: .bold, design: .rounded))
-                        .foregroundStyle(MongrelLocalAppearance.mode == .standard
+                        .foregroundStyle(appearance.mode == .classic
                                          ? Color(hue: 0.545, saturation: 0.75, brightness: 0.82)
-                                         : MongrelLocalAppearance.text)
+                                         : appearance.text)
                         .padding(.bottom, 6)
                         .accessibilityLabel("Memory contains a value")
                 }
                 Spacer(minLength: 0)
                 Text(engine.readout)
                     .font(.system(size: 46, weight: .light, design: .rounded))
-                    .foregroundStyle(MongrelLocalAppearance.text)
+                    .foregroundStyle(appearance.text)
                     .lineLimit(1)
                     .minimumScaleFactor(0.30)
                     .accessibilityLabel("Calculator display")

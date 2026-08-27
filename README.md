@@ -1,6 +1,6 @@
 # Mongrel Calculator
 
-A compact, native macOS calculator with an independent session in every window or tab. Version 0.9.0 is a direct-distribution beta: deliberately small, offline, and built around predictable keyboard operation rather than App Store machinery.
+A compact, native macOS calculator with an independent session in every window or tab. Version 0.9.1 is a direct-distribution beta: deliberately small, offline, and built around predictable keyboard operation rather than App Store machinery.
 
 ## Current Interface
 
@@ -18,7 +18,8 @@ The screenshots predate the beta history popover and accessibility appearance co
 - One-key input for digits and operators; Return calculates, Escape clears the entry, X or asterisk multiplies, and slash divides.
 - Native Command-C result copying and Command-V numeric paste, including decimal comma and scientific notation.
 - Independent state for every native macOS window and tab.
-- Standard, deep-black high-contrast, and custom background/text appearance modes.
+- Default exact-black 21:1 Contrast, original Classic, and persistent Custom background/text appearance modes.
+- Live contrast measurement, readable-settings recovery, and one-click repair for low-contrast custom colors.
 - VoiceOver names, keyboard help, and Reduce Motion support.
 - No account, network access, analytics, advertising, or telemetry. See [PRIVACY.md](PRIVACY.md).
 
@@ -26,7 +27,7 @@ The screenshots predate the beta history popover and accessibility appearance co
 
 The calculation engine treats invalid operations as explicit recoverable states. Division by zero, negative square roots, overflow, malformed pasted values, and non-finite memory operations cannot leak partial state into the next calculation. Very small finite results use scientific notation rather than rounding to zero.
 
-The automated suite currently contains 28 regression tests covering arithmetic, percentages, repeated operations, state recovery, precision, overflow, locale-aware paste handling, memory, history limits, tab isolation, and keyboard shortcut routing.
+The automated suite currently contains 34 regression tests covering arithmetic, percentages, repeated operations, state recovery, precision, overflow, locale-aware paste handling, memory, history limits, tab isolation, keyboard shortcut routing, appearance persistence, and contrast guarantees.
 
 ## Requirements
 
@@ -41,8 +42,7 @@ cd MongrelCalculator
 xcodegen generate
 xcodebuild -project MongrelCalculator.xcodeproj \
   -scheme MongrelCalculator \
-  -destination 'platform=macOS' \
-  CODE_SIGNING_ALLOWED=NO test
+  -destination 'platform=macOS' test
 ```
 
 ## Build a Beta Zip

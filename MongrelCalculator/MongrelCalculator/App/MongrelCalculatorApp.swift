@@ -3,11 +3,14 @@ import AppKit
 
 @main
 struct MongrelCalculatorApp: App {
+    @StateObject private var appearance = MongrelAppearanceModel()
+
     var body: some Scene {
         WindowGroup {
             CalculatorWindow()
                 .preferredColorScheme(.dark)
                 .mongrelAccessibleAppearance()
+                .environmentObject(appearance)
         }
         .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 372, height: 572)
@@ -22,10 +25,11 @@ struct MongrelCalculatorApp: App {
             }
             .formStyle(.grouped)
             .padding()
-            .frame(width: 500, height: 620)
-            .background(MongrelLocalAppearance.background.ignoresSafeArea())
-            .foregroundStyle(MongrelLocalAppearance.text)
-            .mongrelAccessibleAppearance()
+            .frame(width: 500, height: appearance.mode == .custom ? 620 : 360)
+            .preferredColorScheme(.dark)
+            .background(Color(nsColor: .windowBackgroundColor).ignoresSafeArea())
+            .animation(.easeInOut(duration: 0.18), value: appearance.mode)
+            .environmentObject(appearance)
         }
     }
 }

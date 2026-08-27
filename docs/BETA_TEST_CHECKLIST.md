@@ -18,7 +18,11 @@ Run this checklist on every release candidate after the automated tests pass.
 
 ## Interface and Accessibility
 
-- Inspect Standard, Contrast, and Custom appearance modes, including extreme custom colors.
+- On a clean preferences domain, confirm Contrast is the default.
+- Inspect Classic, Contrast, and Custom appearance modes, including extreme custom colors.
+- Confirm Contrast reports #000000, #FFFFFF, and 21:1 in Settings.
+- Set identical Custom background and text colors, confirm Settings remains readable, then use Improve Readability and verify an AAA result.
+- Quit and relaunch after changing the appearance; confirm the selected mode and sliders persist.
 - Run VoiceOver through the display, history, memory indicator, and every calculator key.
 - Enable Reduce Motion and verify button presses no longer scale.
 - Verify the full history popover scrolls and clears without changing the current calculation.

@@ -3,6 +3,8 @@ import AppKit
 
 struct CalculatorView: View {
     @EnvironmentObject private var engine: CalculatorEngine
+    @EnvironmentObject private var appearance: MongrelAppearanceModel
+    @State private var showingHistory = false
 
     // Button rows: operators use unicode chars that match engine's switch cases
     private let mainRows: [[String]] = [
@@ -27,14 +29,16 @@ struct CalculatorView: View {
     var body: some View {
         ZStack {
             GlassBackground().ignoresSafeArea()
-            Color(hue: 0.55, saturation: 0.20, brightness: 0.08)
-                .opacity(0.91)
+            (appearance.mode == .classic
+                ? Color(hue: 0.55, saturation: 0.20, brightness: 0.08)
+                : appearance.background)
+                .opacity(appearance.mode == .classic ? 0.91 : 1)
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
                 historyTape
                 Rectangle()
-                    .fill(Color.white.opacity(0.08))
+                    .fill(appearance.text.opacity(appearance.mode == .contrast ? 0.62 : 0.08))
                     .frame(height: 0.5)
                 displayArea
                 buttonArea
@@ -51,13 +55,41 @@ struct CalculatorView: View {
     // MARK: - History tape
 
     private var historyTape: some View {
-        VStack(alignment: .trailing, spacing: 2) {
-            ForEach(Array(engine.history.suffix(4).enumerated()), id: \.offset) { _, entry in
-                Text(entry)
-                    .font(.system(size: 11, weight: .medium, design: .monospaced))
-                    .foregroundStyle(Color.white.opacity(0.30))
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+        HStack(alignment: .bottom, spacing: 10) {
+            Button {
+                showingHistory.toggle()
+            } label: {
+                Image(systemName: engine.history.isEmpty ? "clock" : "clock.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(appearance.foreground(opacity: engine.history.isEmpty ? 0.32 : 0.72))
+                    .frame(width: 28, height: 28)
+                    .background(appearance.text.opacity(0.06))
+                    .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .disabled(engine.history.isEmpty)
+            .help(engine.history.isEmpty ? "Calculation history is empty" : "Show calculation history")
+            .accessibilityLabel("Calculation history")
+            .accessibilityValue("\(engine.history.count) entries")
+            .popover(isPresented: $showingHistory, arrowEdge: .bottom) {
+                historyPopover
+            }
+
+            VStack(alignment: .trailing, spacing: 2) {
+                if engine.history.isEmpty {
+                    Text("History appears here")
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .foregroundStyle(appearance.foreground(opacity: 0.28))
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                } else {
+                    ForEach(Array(engine.history.suffix(4).enumerated()), id: \.offset) { _, entry in
+                        Text(entry)
+                            .font(.system(size: 11, weight: .medium, design: .monospaced))
+                            .foregroundStyle(appearance.foreground(opacity: 0.48))
+                            .lineLimit(1)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                    }
+                }
             }
         }
         .frame(maxWidth: .infinity, minHeight: 52, alignment: .bottomTrailing)
@@ -65,22 +97,71 @@ struct CalculatorView: View {
         .padding(.vertical, 6)
     }
 
+    private var historyPopover: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("History")
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                Spacer()
+                Button("Clear") {
+                    engine.clearHistory()
+                    showingHistory = false
+                }
+                .buttonStyle(.borderless)
+            }
+            .padding(12)
+
+            Divider()
+
+            ScrollView {
+                LazyVStack(alignment: .trailing, spacing: 10) {
+                    ForEach(Array(engine.history.reversed().enumerated()), id: \.offset) { _, entry in
+                        Text(entry)
+                            .font(.system(size: 12, weight: .medium, design: .monospaced))
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                    }
+                }
+                .padding(12)
+            }
+        }
+        .frame(width: 310, height: 260)
+        .background(appearance.background)
+        .foregroundStyle(appearance.text)
+    }
+
     // MARK: - Display
 
     private var displayArea: some View {
-        HStack(alignment: .bottom, spacing: 10) {
-            if engine.hasMemory {
-                Text("M")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color(hue: 0.545, saturation: 0.75, brightness: 0.82))
-                    .padding(.bottom, 6)
+        VStack(alignment: .trailing, spacing: 2) {
+            if let issue = engine.issue {
+                Text(issue.message)
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundStyle(appearance.foreground(opacity: 0.72))
+                    .lineLimit(1)
+                    .accessibilityLabel("Calculator error")
+                    .accessibilityValue(issue.message)
             }
-            Spacer(minLength: 0)
-            Text(engine.readout)
-                .font(.system(size: 46, weight: .light, design: .rounded))
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .minimumScaleFactor(0.35)
+
+            HStack(alignment: .bottom, spacing: 10) {
+                if engine.hasMemory {
+                    Text("M")
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(appearance.mode == .classic
+                                         ? Color(hue: 0.545, saturation: 0.75, brightness: 0.82)
+                                         : appearance.text)
+                        .padding(.bottom, 6)
+                        .accessibilityLabel("Memory contains a value")
+                }
+                Spacer(minLength: 0)
+                Text(engine.readout)
+                    .font(.system(size: 46, weight: .light, design: .rounded))
+                    .foregroundStyle(appearance.text)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.30)
+                    .accessibilityLabel("Calculator display")
+                    .accessibilityValue(engine.readout)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .trailing)
         .padding(.horizontal, hPad)
@@ -189,28 +270,56 @@ private struct CalculatorKeyboardCapture: NSViewRepresentable {
             window = nil
         }
 
-        /// Map a raw NSEvent to the engine's key names (unicode operators + special keys).
         private static func mapKey(_ event: NSEvent) -> String? {
-            switch event.keyCode {
-            case 51: return "⌫"        // Delete / Backspace
-            case 53: return "CE"       // Escape
-            case 36, 76: return "="    // Return, numpad Enter
-            default: break
-            }
-            guard let c = event.characters, c.count == 1 else { return nil }
-            switch c {
-            case "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".":
-                return c
-            case "+": return "+"
-            case "-": return "−"       // normalize ASCII minus → unicode minus sign
-            case "*": return "×"
-            case "/": return "÷"
-            case "=": return "="
-            case "%": return "%"
-            case "c": return "CE"
-            case "C": return "C"
-            default: return nil
-            }
+            CalculatorKeyboardMapper.map(
+                keyCode: event.keyCode,
+                characters: event.characters,
+                modifiers: event.modifierFlags
+            )
+        }
+    }
+}
+
+enum CalculatorKeyboardMapper {
+    static func map(
+        keyCode: UInt16,
+        characters: String?,
+        modifiers: NSEvent.ModifierFlags
+    ) -> String? {
+        let shortcutModifiers: NSEvent.ModifierFlags = [.command, .control, .option]
+        guard modifiers.intersection(shortcutModifiers).isEmpty else { return nil }
+
+        switch keyCode {
+        case 51, 117: return "⌫"     // Backspace and Forward Delete
+        case 53: return "CE"          // Escape
+        case 36, 76: return "="       // Return and numpad Enter
+        default: break
+        }
+
+        guard let character = characters, character.count == 1 else { return nil }
+        switch character {
+        case "0", "1", "2", "3", "4", "5", "6", "7", "8", "9":
+            return character
+        case ".", ",":
+            return "."
+        case "+":
+            return "+"
+        case "-":
+            return "−"
+        case "*", "x", "X":
+            return "×"
+        case "/":
+            return "÷"
+        case "=":
+            return "="
+        case "%":
+            return "%"
+        case "c":
+            return "CE"
+        case "C":
+            return "C"
+        default:
+            return nil
         }
     }
 }

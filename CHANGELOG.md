@@ -1,3 +1,9 @@
+# 0.9.1 beta 2 — 2026-09-27
+
+- New supplied Calculator icon, packaged at all native Mac sizes.
+- Reproducible Command Line Tools build for local installation and universal distribution.
+- Existing calculator behaviour is unchanged; in-progress suite bridge integration is not part of this release.
+
 # Changelog
 
 ## 0.9.1-beta.1 - 2026-08-27

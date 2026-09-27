@@ -1,6 +1,8 @@
 # Mongrel Calculator
 
-A compact, native macOS calculator with an independent session in every window or tab. Version 0.9.1 is a direct-distribution beta: deliberately small, offline, and built around predictable keyboard operation rather than App Store machinery.
+A compact, native macOS calculator with an independent session in every window or tab. Version 0.9.1 beta 2 is a direct-distribution beta: deliberately small, offline, and built around predictable keyboard operation rather than App Store machinery.
+
+The current build uses the supplied monochrome Calculator icon. Download the signed, notarized app from [Releases](https://github.com/fwalterj/mongrel-calculator/releases).
 
 ## Current Interface
 
@@ -44,6 +46,8 @@ xcodebuild -project MongrelCalculator.xcodeproj \
   -scheme MongrelCalculator \
   -destination 'platform=macOS' test
 ```
+
+A local universal build is also available with `./scripts/build-local-app.sh`. It uses the installed macOS Command Line Tools, and does not sign for distribution or notarize.
 
 ## Build a Beta Zip
 
